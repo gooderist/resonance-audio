@@ -40,8 +40,15 @@ end
 
 [ hrirMatrix, fs, angles ] = loadhrirssymmetric(hrirPath);
 hrirMatrixFull = [];
-anglesSymmetric = angles(angles(:, 1) >= 0, :);
+% anglesSymmetric = angles(angles(:, 1) >= 0, :);
+% NOTE(will): OLD WAY sometimes -0 is being included, uncomment following when seeing plus 1 out of bounds
+% toKeep = [true; (diff(anglesSymmetric(:,1))~=0)];
+% anglesSymmetric = anglesSymmetric(toKeep, :);
 
+% NOTE(will): just grab every other entry
+anglesSymmetric = angles(1:2:end, :);
+
+% NOTE(will): the following is for symmetric hrir sets we want all hrirs used
 for angle = 1:size(anglesSymmetric, 1)
   % If HRIR is lateral.
   if size(hrirMatrix{angle}, 2) == 2

@@ -1,3 +1,5 @@
+matlab/test_will
+
 # Ignore third party directories by default
 third_party/android-cmake/
 third_party/eigen/

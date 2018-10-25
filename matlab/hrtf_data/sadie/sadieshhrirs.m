@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 %}
 
-function [] = sadieshhrirs(ambisonicOrder, shelfFilter)
+function [] = sadieshhrirs(ambisonicOrder, shelfFilter, hrirDir)
 %SADIESHHRIRS Encodes SADIE HRIRs into Spherical Harmonic representation.
 % Generates Spherical Harmonic encoded HRIRs from the relevant directory of
 % regular SADIE HRIRs. Please note: the shhrirsymmetric function is fully
@@ -28,25 +28,31 @@ function [] = sadieshhrirs(ambisonicOrder, shelfFilter)
 %   shelfFilter    - Whether to use or not Ambisonic shelf-filters (bool).
 
 % Target sampling rate.
-TARGET_SAMPLE_RATE = 48000;
+TARGET_SAMPLE_RATE = 44100;%48000;
 
-switch ambisonicOrder
-    case 1
-        hrirDir = 'sadie_subject_002_symmetric_cube';
-    case 2
-        hrirDir = 'sadie_subject_002_symmetric_dodecahedron_faces';
-    case 3
-        hrirDir = 'sadie_subject_002_symmetric_lebedev26';
-    case 4
-        hrirDir = 'sadie_subject_002_symmetric_pentakis_dodecahedron';
-    case 5
-        hrirDir = 'sadie_subject_002_symmetric_pentakis_icosidodecahedron';
-    otherwise
-        error('Unsupported Ambisonic order');
+if(~exist('hrirDir','var'))
+  hrirDir = 'h3_symmetric_lebedev26';
 end
+%'WILL_AFTER';
+%'will_symmetric_lebedev26';
+
+%switch ambisonicOrder
+%    case 1
+%        hrirDir = 'WILL_HRIR'sadie_subject_003_symmetric_cube';
+%    case 2
+%        hrirDir = 'sadie_subject_003_symmetric_dodecahedron_faces';
+%    case 3
+%        hrirDir = 'will_symmetric_lebedev26';%'WILL_HRIR';%'sadie_subject_003_symmetric_lebedev26';
+%    case 4
+%        hrirDir = 'WILL_HRIR';%'sadie_subject_003_symmetric_pentakis_dodecahedron';
+%    case 5
+%        hrirDir = 'WILL_HRIR';%'sadie_subject_003_symmetric_pentakis_icosidodecahedron';
+%    otherwise
+%        error('Unsupported Ambisonic order');
+%end
 
 % Output path for the SH HRIR WAV.
-savedir = ['sadie_002_symmetric_sh_hrir_o_', ...
+savedir = [hrirDir '_sh_hrir_o_', ...
     num2str(ambisonicOrder), '/'];
 
 if (exist(savedir, 'dir') == 0)
