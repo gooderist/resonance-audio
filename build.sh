@@ -29,7 +29,7 @@ ANDROID_NDK="~/android-ndk-r15c/"
 ANDROID_NATIVE_API_LEVEL="21"
 ANDROID_ABI="armeabi-v7a with NEON"
 
-MSVC_GENERATOR="Visual Studio 14 2015 Win64"
+MSVC_GENERATOR="Visual Studio 15 2017 Win64"
 
 function show_help()
 {
