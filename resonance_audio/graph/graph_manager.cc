@@ -263,13 +263,13 @@ void GraphManager::InitializeAmbisonicRendererGraph(
   // Create binaural decoder pipeline.
   ambisonic_mixer_nodes_[ambisonic_order] =
       std::make_shared<MixerNode>(system_settings_, num_channels);
-  auto ambisonic_binaural_decoder_node =
+  ambisonic_binaural_decoder_node_[ambisonic_order] = 
       std::make_shared<AmbisonicBinauralDecoderNode>(
           system_settings_, ambisonic_order, sh_hrir_filename, &fft_manager_,
           &resampler_);
-  ambisonic_binaural_decoder_node->Connect(
+  ambisonic_binaural_decoder_node_[ambisonic_order]->Connect(
       ambisonic_mixer_nodes_[ambisonic_order]);
-  stereo_mixer_node_->Connect(ambisonic_binaural_decoder_node);
+  stereo_mixer_node_->Connect(ambisonic_binaural_decoder_node_[ambisonic_order]);
 }
 
 std::shared_ptr<BufferedSourceNode> GraphManager::LookupSourceNode(

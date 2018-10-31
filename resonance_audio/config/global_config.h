@@ -25,10 +25,12 @@ inline GraphManagerConfig GlobalConfig() {
   GraphManagerConfig config;
   config.configuration_name = "Global Config";
 
-  config.max_ambisonic_order = 3;
+  // NOTE(will): added 5th order data using Lebedev 50 on OLD Sadie Subject_002 data set
+  config.max_ambisonic_order = 5;
   config.sh_hrir_filenames = {{1, "WAV/Subject_002/SH/sh_hrir_order_1.wav"},
                               {2, "WAV/Subject_002/SH/sh_hrir_order_2.wav"},
-                              {3, "WAV/Subject_002/SH/sh_hrir_order_3.wav"}};
+                              {3, "WAV/Subject_002/SH/sh_hrir_order_3.wav"},
+                              {5, "WAV/Subject_002/SH/sh_hrir_order_5.wav"}};
   return config;
 }
 

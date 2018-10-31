@@ -97,11 +97,13 @@ bool BinauralSurroundRendererImpl::Init(SurroundFormat surround_format) {
     case kFirstOrderAmbisonics:
     case kSecondOrderAmbisonics:
     case kThirdOrderAmbisonics:
+    case kFifthOrderAmbisonics:
       InitializeAmbisonics();
       break;
     case kFirstOrderAmbisonicsWithNonDiegeticStereo:
     case kSecondOrderAmbisonicsWithNonDiegeticStereo:
     case kThirdOrderAmbisonicsWithNonDiegeticStereo:
+    case kFifthOrderAmbisonicsWithNonDiegeticStereo: // TODO(will): verify implementation
       InitializeAmbisonicsWithNonDiegeticStereo();
       break;
     default:
@@ -151,12 +153,17 @@ size_t BinauralSurroundRendererImpl::GetExpectedNumChannelsFromSurroundFormat(
       return kNumSecondOrderAmbisonicChannels;
     case kThirdOrderAmbisonics:
       return kNumThirdOrderAmbisonicChannels;
+    case kFifthOrderAmbisonics:
+      return kNumFifthOrderAmbisonicChannels;
     case kFirstOrderAmbisonicsWithNonDiegeticStereo:
       return kNumFirstOrderAmbisonicChannels + kNumStereoChannels;
     case kSecondOrderAmbisonicsWithNonDiegeticStereo:
       return kNumSecondOrderAmbisonicChannels + kNumStereoChannels;
     case kThirdOrderAmbisonicsWithNonDiegeticStereo:
       return kNumThirdOrderAmbisonicChannels + kNumStereoChannels;
+    case kFifthOrderAmbisonicsWithNonDiegeticStereo:
+      return kNumFifthOrderAmbisonicChannels + kNumStereoChannels;
+      // TODO(will): there is a non-diegetic ver of the define we can use here
     default:
       LOG(FATAL) << "Undefined surround format mode";
       return false;
@@ -240,7 +247,7 @@ SourceId BinauralSurroundRendererImpl::CreateSoundObject(float azimuth_deg) {
       vraudio::SphericalAngle::FromDegrees(azimuth_deg, kZeroElevation)
           .GetWorldPositionOnUnitSphere();
   const SourceId source_id = resonance_audio_api_->CreateSoundObjectSource(
-      RenderingMode::kBinauralHighQuality);
+      RenderingMode::kBinauralHighQuality); // TODO(will): Why is this hard-coded to HighQuality?
   resonance_audio_api_->SetSourcePosition(
       source_id, speaker_position[0], speaker_position[1], speaker_position[2]);
   return source_id;
@@ -450,6 +457,7 @@ AudioBuffer* BinauralSurroundRendererImpl::ProcessBuffer() {
     case kFirstOrderAmbisonics:
     case kSecondOrderAmbisonics:
     case kThirdOrderAmbisonics:
+    case kFifthOrderAmbisonics:
       DCHECK_EQ(source_ids_.size(), 1U);
       resonance_audio_api_->SetPlanarBuffer(
           source_ids_[0], temp_planar_buffer_ptrs_.data(),
@@ -458,6 +466,7 @@ AudioBuffer* BinauralSurroundRendererImpl::ProcessBuffer() {
     case kFirstOrderAmbisonicsWithNonDiegeticStereo:
     case kSecondOrderAmbisonicsWithNonDiegeticStereo:
     case kThirdOrderAmbisonicsWithNonDiegeticStereo:
+    case kFifthOrderAmbisonicsWithNonDiegeticStereo:
       DCHECK_EQ(source_ids_.size(), 2U);
       DCHECK_GT(input->num_channels(), kNumStereoChannels);
       static_cast<ResonanceAudioApiImpl*>(resonance_audio_api_.get())

@@ -41,7 +41,7 @@ const size_t kMemoryAlignmentBytes = 64;
 // HRIR data points used in the binaural renderer; b) size of the lookup table
 // controlling the angular spread of a sound source in the Ambisonic Lookup
 // Table class.
-static const int kMaxSupportedAmbisonicOrder = 3;
+static const int kMaxSupportedAmbisonicOrder = 5;
 
 // Maximum allowed size of internal buffers.
 const size_t kMaxSupportedNumFrames = 16384;
@@ -67,6 +67,9 @@ static const size_t kNumSecondOrderAmbisonicChannels = 9;
 // Number of third-order ambisonic channels.
 static const size_t kNumThirdOrderAmbisonicChannels = 16;
 
+// Number of fifth-order ambisonic channels.
+static const size_t kNumFifthOrderAmbisonicChannels = 36;
+
 // Number of first-order ambisonic with non-diegetic stereo channels.
 static const size_t kNumFirstOrderAmbisonicWithNonDiegeticStereoChannels = 6;
 
@@ -75,6 +78,10 @@ static const size_t kNumSecondOrderAmbisonicWithNonDiegeticStereoChannels = 11;
 
 // Number of third-order ambisonic with non-diegetic stereo channels.
 static const size_t kNumThirdOrderAmbisonicWithNonDiegeticStereoChannels = 18;
+
+// Number of fifth-order ambisonic channels with non-diegetic stereo channels.
+static const size_t kNumFifthOrderAmbisonicWithNonDiegeticStereoChannels = 38;
+
 
 // Negative 60dB in amplitude.
 static const float kNegative60dbInAmplitude = 0.001f;

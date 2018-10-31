@@ -25,6 +25,7 @@ SourceGraphConfig StereoPanningConfig();
 SourceGraphConfig BinauralLowQualityConfig();
 SourceGraphConfig BinauralMediumQualityConfig();
 SourceGraphConfig BinauralHighQualityConfig();
+SourceGraphConfig BinauralHigherQualityConfig();
 SourceGraphConfig RoomEffectsOnlyConfig();
 
 }  // namespace vraudio

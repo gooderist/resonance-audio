@@ -84,6 +84,10 @@ class BinauralSurroundRenderer {
     // (AmbiX format: 16 channels, ACN channel ordering, SN3D normalization).
     kThirdOrderAmbisonics = 6,
 
+    // Binaurally renders fifth-order ambisonics.
+    // (AmbiX format: 36 channels, ACN channel ordering, SN3D normalization).
+    kFifthOrderAmbisonics = 11,
+
     // Binaurally renders first-order ambisonics with a non-diegetic-stereo
     // track. The first 4 channels contain ambisonic AmbiX format.
     // (AmbiX format: 4 channels, ACN channel ordering, SN3D normalization).
@@ -102,7 +106,13 @@ class BinauralSurroundRenderer {
     // Channel 17 to 18 contain non-diegetic-stereo.
     kThirdOrderAmbisonicsWithNonDiegeticStereo = 9,
 
-    // Note: Next available value is: 11
+    // Binaurally renders fifth-order ambisonics with a non-diegetic-stereo
+    // track. The first 36 channels contain ambisonic AmbiX format.
+    // (AmbiX format: 36 channels, ACN channel ordering, SN3D normalization).
+    // Channel 37 to 38 contain non-diegetic-stereo. // TODO(will): Do we need this?
+    kFifthOrderAmbisonicsWithNonDiegeticStereo = 12,
+
+    // Note: Next available value is: 13
   };
 
 

@@ -62,6 +62,18 @@ SourceGraphConfig BinauralHighQualityConfig() {
   return config;
 }
 
+SourceGraphConfig BinauralHigherQualityConfig() {
+  SourceGraphConfig config;
+  config.configuration_name = "Binaural Higher Quality (5th order)";
+
+  config.ambisonic_order = 5;
+  config.enable_hrtf = true;
+  config.enable_direct_rendering = true;
+
+  return config;
+}
+
+
 SourceGraphConfig RoomEffectsOnlyConfig() {
   SourceGraphConfig config;
   config.configuration_name = "Room Effects Only";

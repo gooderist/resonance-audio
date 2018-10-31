@@ -19,6 +19,7 @@ limitations under the License.
 #include <algorithm>
 #include <numeric>
 
+#include "ambisonics/ambisonic_binaural_decoder.h"
 #include "ambisonics/utils.h"
 #include "base/constants_and_types.h"
 #include "base/logging.h"
@@ -29,9 +30,11 @@ limitations under the License.
 #include "config/source_config.h"
 #include "dsp/channel_converter.h"
 #include "dsp/distance_attenuation.h"
+#include "dsp/sh_hrir_creator.h"
 #include "graph/source_parameters_manager.h"
 #include "utils/planar_interleaved_conversion.h"
 #include "utils/sample_type_conversion.h"
+#include "utils/wav.h"
 
 namespace vraudio {
 
@@ -58,6 +61,8 @@ SourceGraphConfig GetSourceGraphConfigFromRenderingMode(
       return BinauralMediumQualityConfig();
     case RenderingMode::kBinauralHighQuality:
       return BinauralHighQualityConfig();
+    case RenderingMode::kBinauralHigherQuality:
+      return BinauralHigherQualityConfig();
     case RenderingMode::kRoomEffectsOnly:
       return RoomEffectsOnlyConfig();
     default:
@@ -578,5 +583,57 @@ void ResonanceAudioApiImpl::SetSourceBuffer(SourceId source_id,
   LOG(WARNING) << "Number of input channels does not match the number of "
                   "output channels";
 }
+
+void ResonanceAudioApiImpl::SetHRIR(char* user_hrir) {
+    userHRIR = std::string(user_hrir);
+    // Create user HRIR ambisonic decoder
+    // userHRIR is a series of hex tokens
+    std::istringstream hex_tokens(userHRIR);
+    std::string token;
+    std::stringstream wav_data_stream;
+    // convert to a string
+    while (std::getline(hex_tokens, token, ',')) {
+        wav_data_stream << (unsigned char)std::stoi(token.substr(2, 2), 0, 16);
+    }
+    std::string testData = wav_data_stream.str();
+    // set istringstream wav_data_stream to new string
+    // std::istringstream wav_data_stream(userHRIR);
+    std::unique_ptr<const Wav> wav = Wav::CreateOrNull(&wav_data_stream);
+
+    if (wav == NULL) {
+        LOG(ERROR) << "User HRIR is malformed!";
+
+        return;
+    }
+
+    auto sh_hrirs = vraudio::CreateShHrirsFromWav(*wav, graph_manager_->system_settings_.GetSampleRateHz(), &graph_manager_->resampler_);
+    auto sh_order = GetPeriphonicAmbisonicOrder(wav->GetNumChannels());
+    graph_manager_->ambisonic_binaural_decoder_node_[sh_order]->user_decoder = new AmbisonicBinauralDecoder(
+        *sh_hrirs, graph_manager_->system_settings_.GetFramesPerBuffer(), &graph_manager_->fft_manager_);
+};
+
+void ResonanceAudioApiImpl::UseHRIR(bool use_hrir) {
+    if (use_hrir == bUseHRIR)
+        return;
+
+    bUseHRIR = use_hrir;
+
+    if (bUseHRIR) {
+        // Enable user hrir for all orders
+        LOG(WARNING) << "ENABLING USER HRIR";
+        for (auto node : graph_manager_->ambisonic_binaural_decoder_node_) {
+            if (node.second->user_decoder)
+                node.second->ambisonic_binaural_decoder_ = node.second->user_decoder;
+        }
+    }
+    else {
+        // Disable user hrir for all orders
+        LOG(WARNING) << "DISABLING USER HRIR";
+        for (auto node : graph_manager_->ambisonic_binaural_decoder_node_) {
+            if (node.second->builtin_decoder)
+                node.second->ambisonic_binaural_decoder_ = node.second->builtin_decoder;
+        }
+    }
+};
 
 }  // namespace vraudio

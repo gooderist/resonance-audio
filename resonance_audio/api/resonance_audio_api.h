@@ -20,7 +20,8 @@ limitations under the License.
 
 // EXPORT_API can be used to define the dllimport storage-class attribute.
 #if !defined(EXPORT_API)
-#define EXPORT_API
+// TODO(will): add appropriate conditionals for Windows / non-Win builds
+#define EXPORT_API __declspec(dllexport)
 #endif
 
 #include <cstddef>  // size_t declaration.
@@ -47,6 +48,9 @@ enum RenderingMode {
   // HRTF-based rendering using Third Order Ambisonics, over a virtual array of
   // 26 loudspeakers arranged in a Lebedev grid: https://goo.gl/DX1wh3.
   kBinauralHighQuality,
+  // HRTF-based rendering using Fifth Order Ambisonics, over a virtual array of
+  // 50 loudspeakers arranged in a Lebedev-50 grid
+  kBinauralHigherQuality,
   // Room effects only rendering. This disables HRTF-based rendering and direct
   // (dry) output of a sound object. Note that this rendering mode should *not*
   // be used for general-purpose sound object spatialization, as it will only
@@ -408,6 +412,15 @@ class ResonanceAudioApi {
   // @param reverb_properties Reverb properties.
   virtual void SetReverbProperties(
       const ReverbProperties& reverb_properties) = 0;
+
+  // NOTE(will): temp functions to accept SH.wav data encoded with wav_to_hrtf.py
+  virtual void SetHRIR(char* user_hrir) = 0;
+  virtual void UseHRIR(bool use_hrir) = 0;
+  // TODO(will): Sets custom HRTF data stored in a sofa file
+  // virtual void bool SetCustomSofa(const char* file_name, int ambisonic_order) = 0;
+  // TODO(will): Enable custom HRTF
+  // virtual void bool EnableCustomSofa(bool use_hrir, int ambisonic_order) = 0;
+
 };
 
 }  // namespace vraudio

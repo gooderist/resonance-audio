@@ -47,8 +47,10 @@ AmbisonicBinauralDecoderNode::AmbisonicBinauralDecoderNode(
   std::unique_ptr<AudioBuffer> sh_hrirs = CreateShHrirsFromAssets(
       sh_hrir_filename, system_settings_.GetSampleRateHz(), resampler);
   CHECK_EQ(sh_hrirs->num_channels(), num_ambisonic_channels_);
-  ambisonic_binaural_decoder_.reset(new AmbisonicBinauralDecoder(
-      *sh_hrirs, system_settings_.GetFramesPerBuffer(), fft_manager));
+  // NOTE(will): save builtin decoder so we can swap it out later
+  builtin_decoder = new AmbisonicBinauralDecoder(
+      *sh_hrirs, system_settings_.GetFramesPerBuffer(), fft_manager);
+  ambisonic_binaural_decoder_ = builtin_decoder;
 }
 
 AmbisonicBinauralDecoderNode::~AmbisonicBinauralDecoderNode() {}

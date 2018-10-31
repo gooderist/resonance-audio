@@ -244,6 +244,15 @@ class GraphManager {
   // Updates the room reverb.
   void UpdateRoomReverb();
 
+  // TODO(will): keep pointer to ambisonic decoder node, make all this private again
+  std::unordered_map<int, std::shared_ptr<AmbisonicBinauralDecoderNode>> ambisonic_binaural_decoder_node_;
+  // |Resampler| to be used to convert HRIRs to the system sample rate.
+  Resampler resampler_;
+  // Manages system wide settings.
+  const SystemSettings& system_settings_;
+  // |FftManager| to be used in nodes that require FFT transformations.
+  FftManager fft_manager_;
+
  private:
   // Initializes the Ambisonic renderer subgraph for the speficied Ambisonic
   // order and connects it to the |StereoMixerNode|.
@@ -354,16 +363,16 @@ class GraphManager {
   const GraphManagerConfig config_;
 
   // Manages system wide settings.
-  const SystemSettings& system_settings_;
+  // TODO(will): make private again, const SystemSettings& system_settings_;
 
   // Provides Ambisonic encoding coefficients.
   std::unique_ptr<AmbisonicLookupTable> lookup_table_;
 
   // |FftManager| to be used in nodes that require FFT transformations.
-  FftManager fft_manager_;
+  // TODO(will): make private again, FftManager fft_manager_;
 
   // |Resampler| to be used to convert HRIRs to the system sample rate.
-  Resampler resampler_;
+  // TODO(will): make private again, Resampler resampler_;
 
   // Ambisonic mixer nodes per each ambisonic order to accumulate the
   // ambisonic sources for the corresponding binaural Ambisonic decoders.

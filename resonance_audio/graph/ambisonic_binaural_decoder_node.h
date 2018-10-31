@@ -48,6 +48,13 @@ class AmbisonicBinauralDecoderNode : public ProcessingNode {
 
   ~AmbisonicBinauralDecoderNode() override;
 
+  // Ambisonic decoder used to render binaural output.
+  // TODO(will) make sure this is properly cleaned
+  /*std::unique_ptr<AmbisonicBinauralDecoder>*/
+  AmbisonicBinauralDecoder* ambisonic_binaural_decoder_ = nullptr;
+  AmbisonicBinauralDecoder* builtin_decoder = nullptr;
+  AmbisonicBinauralDecoder* user_decoder = nullptr;
+
  protected:
   // Implements ProcessingNode.
   const AudioBuffer* AudioProcess(const NodeInput& input) override;
@@ -61,8 +68,9 @@ class AmbisonicBinauralDecoderNode : public ProcessingNode {
   // Denotes if the stereo speaker mode is enabled.
   bool is_stereo_speaker_mode_;
 
+  // TODO(will): make this private again
   // Ambisonic decoder used to render binaural output.
-  std::unique_ptr<AmbisonicBinauralDecoder> ambisonic_binaural_decoder_;
+  // std::unique_ptr<AmbisonicBinauralDecoder> ambisonic_binaural_decoder_;
 
   size_t num_frames_processed_on_empty_input_;
 
