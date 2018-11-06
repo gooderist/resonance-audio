@@ -1,3 +1,4 @@
+third_party/libmysofa
 matlab/test_will
 
 # Ignore third party directories by default
