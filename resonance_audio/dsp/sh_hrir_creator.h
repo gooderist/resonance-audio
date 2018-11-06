@@ -20,6 +20,7 @@ limitations under the License.
 #include "base/audio_buffer.h"
 #include "dsp/resampler.h"
 #include "utils/wav.h"
+#include "Eigen/Eigen"
 
 namespace vraudio {
 
@@ -48,6 +49,12 @@ std::unique_ptr<AudioBuffer> CreateShHrirsFromWav(const Wav& wav,
 std::unique_ptr<AudioBuffer> CreateShHrirsFromAssets(
     const std::string& filename, int target_sample_rate_hz,
     Resampler* resampler);
+
+// NOTE(will): added for matrix to sh conversion
+std::unique_ptr<AudioBuffer> CreateShHrirsFromMatrix(
+	const Eigen::MatrixXf& matrix, int original_sample_rate_hz,
+	int target_sample_rate_hz,
+	Resampler* resampler);
 
 }  // namespace vraudio
 

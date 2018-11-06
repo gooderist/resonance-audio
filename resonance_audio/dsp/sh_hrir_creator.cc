@@ -69,4 +69,42 @@ std::unique_ptr<AudioBuffer> CreateShHrirsFromAssets(
   return CreateShHrirsFromWav(*wav, target_sample_rate_hz, resampler);
 }
 
+// TODO(will): added matrix to sh audio buffer converter
+std::unique_ptr<AudioBuffer> CreateShHrirsFromMatrix(
+	const Eigen::MatrixXf& matrix, int original_sample_rate_hz,
+	int target_sample_rate_hz,
+	Resampler* resampler) {
+	// TODO(will): transpose matrix to interlace coefficients
+	Eigen::MatrixXf tMatrix(matrix);
+	tMatrix.transposeInPlace();
+	Eigen::VectorXf vec(Eigen::Map<Eigen::VectorXf>(tMatrix.data(), tMatrix.cols()*tMatrix.rows()));
+	std::vector<float> data(vec.data(), vec.data() + vec.size());
+
+	size_t num_channels = matrix.cols();
+	size_t sh_hrir_length = matrix.rows();
+	std::unique_ptr<AudioBuffer> sh_hrirs(
+		new AudioBuffer(num_channels, sh_hrir_length));
+	FillAudioBuffer(data, num_channels, sh_hrirs.get());
+
+	CHECK_GT(original_sample_rate_hz, 0);
+	CHECK_GT(target_sample_rate_hz, 0);
+	if (original_sample_rate_hz != target_sample_rate_hz) {
+		if (!Resampler::AreSampleRatesSupported(original_sample_rate_hz,
+			target_sample_rate_hz)) {
+			LOG(FATAL) << "Unsupported sampling rates for loading HRIRs: "
+				<< original_sample_rate_hz << ", " << target_sample_rate_hz;
+		}
+		resampler->ResetState();
+		// Resample the SH HRIRs if necessary.
+		resampler->SetRateAndNumChannels(original_sample_rate_hz, target_sample_rate_hz,
+			num_channels);
+		std::unique_ptr<AudioBuffer> resampled_sh_hrirs(new AudioBuffer(
+			num_channels, resampler->GetNextOutputLength(sh_hrir_length)));
+		resampler->Process(*sh_hrirs, resampled_sh_hrirs.get());
+		return resampled_sh_hrirs;
+	}
+	return sh_hrirs;
+}
+
+
 }  // namespace vraudio

@@ -19,7 +19,10 @@ limitations under the License.
 #include <algorithm>
 #include <numeric>
 
+#include "mysofa.h"
+
 #include "ambisonics/ambisonic_binaural_decoder.h"
+#include "ambisonics/ambisonic_codec_impl.h" // TODO: is it okay to use this over the parent class?
 #include "ambisonics/utils.h"
 #include "base/constants_and_types.h"
 #include "base/logging.h"
@@ -635,5 +638,151 @@ void ResonanceAudioApiImpl::UseHRIR(bool use_hrir) {
         }
     }
 };
+
+// HACK(will): helper function to manually set HDF5 attributes
+void HACK_set_if_null(MYSOFA_ATTRIBUTE *attrib, char *name, char *value) {
+    MYSOFA_ATTRIBUTE *curr = attrib;
+    while (curr != NULL) {
+        if (strcmp(curr->name, name) == 0 && curr->value == NULL) {
+            curr->value = _strdup(value);
+            break;
+        }
+        curr = curr->next;
+    }
+}
+
+// HACK(will): manually supply the missing values in netcdf 4.3.1.1 files
+void HACK_fix_attrib(MYSOFA_EASY* hrtf) {
+    HACK_set_if_null(hrtf->hrtf->ListenerPosition.attributes, "Units", "metre");
+    HACK_set_if_null(hrtf->hrtf->ListenerPosition.attributes, "Type", "cartesian");
+    HACK_set_if_null(hrtf->hrtf->ReceiverPosition.attributes, "Units", "metre");
+    HACK_set_if_null(hrtf->hrtf->ReceiverPosition.attributes, "Type", "cartesian");
+    HACK_set_if_null(hrtf->hrtf->SourcePosition.attributes, "Units", "degree, degree, metre");
+    HACK_set_if_null(hrtf->hrtf->SourcePosition.attributes, "Type", "spherical");
+    HACK_set_if_null(hrtf->hrtf->EmitterPosition.attributes, "Units", "metre");
+    HACK_set_if_null(hrtf->hrtf->EmitterPosition.attributes, "Type", "cartesian");
+    HACK_set_if_null(hrtf->hrtf->ListenerView.attributes, "Units", "metre");
+    HACK_set_if_null(hrtf->hrtf->ListenerView.attributes, "Type", "cartesian");
+    HACK_set_if_null(hrtf->hrtf->DataSamplingRate.attributes, "Units", "hertz");
+}
+
+bool ResonanceAudioApiImpl::SetCustomSofa(const char* file_name, int ambisonic_order) {
+    int err;
+    struct MYSOFA_EASY *hrtf = (MYSOFA_EASY*)malloc(sizeof(struct MYSOFA_EASY));
+    if (!hrtf)
+        return false;
+
+    hrtf->fir = NULL;
+    hrtf->lookup = NULL;
+    hrtf->neighborhood = NULL;
+
+    // TODO(will): pass in ambisonic speaker positions (acceptable angles) as argument
+
+    // TODO(will): check against settings variable for supported orders instead of hard-coding this
+    if (ambisonic_order < 1 || ambisonic_order > 5 || ambisonic_order == 4)
+        return false;
+
+    if (file_name == NULL || file_name == "") {
+        return false;
+    }
+
+    hrtf->hrtf = mysofa_load(file_name, &err);
+
+    if (!hrtf->hrtf) {
+        mysofa_close(hrtf);
+        return false;
+    }
+
+    HACK_fix_attrib(hrtf); // TODO: remove once netcdf 4.3.1.1 handling is fixed
+
+    err = mysofa_check(hrtf->hrtf);
+    if (err != MYSOFA_OK) {
+        mysofa_close(hrtf);
+        return err;
+    }
+
+    //mysofa_tocartesian(hrtf->hrtf); // TODO: do we need this?
+
+    // TODO: do we need this if we're just pulling out data?
+    //hrtf->lookup = mysofa_lookup_init(hrtf->hrtf);
+    //if (hrtf->lookup == NULL) {
+    //    err = MYSOFA_INTERNAL_ERROR;
+    //    mysofa_close(hrtf);
+    //    return err;
+    //}
+    //hrtf->neighborhood = mysofa_neighborhood_init(hrtf->hrtf, hrtf->lookup);
+
+    int source_sampling_rate = (int)hrtf->hrtf->DataSamplingRate.values[0];
+
+    int numEmitters = (int)hrtf->hrtf->M;
+    int numReceivers = (int)hrtf->hrtf->R;
+    int numSamples = (int)hrtf->hrtf->N;
+
+    if (numEmitters <= 0 || numReceivers != 2 || numSamples <= 0)
+        return false;
+
+    std::vector<float> pos(hrtf->hrtf->SourcePosition.values, 
+        hrtf->hrtf->SourcePosition.values + hrtf->hrtf->SourcePosition.elements);
+
+    // NOTE(will): get all the angles and format them for Resonance
+    std::vector<float> data(hrtf->hrtf->DataIR.values, 
+        hrtf->hrtf->DataIR.values + hrtf->hrtf->DataIR.elements);
+
+    std::vector<SphericalAngle> sofa_angles(numEmitters * numReceivers);
+    Eigen::MatrixXf hrir_full_matrix(numSamples, numEmitters * numReceivers);
+    int totalSamplesPerEmitter = numSamples * numReceivers;
+
+    for (int i = 0; i < numEmitters; ++i) {
+        // TODO(will): filter out angles based on speaker positions
+        sofa_angles[i * 2] = SphericalAngle::FromDegrees(pos[i * 3], pos[i * 3 + 1]);
+        sofa_angles[i * 2 + 1] = SphericalAngle::FromDegrees(-pos[i * 3], pos[i * 3 + 1]);
+
+        // TODO(will): (opt?) apply fade out to all HRIRs
+        // NOTE(will): assumes two receiver positions for now
+        for (int n = 0; n < numSamples; ++n) {
+            hrir_full_matrix(n, i * 2) = data[i*totalSamplesPerEmitter + n]; // Left channel
+            hrir_full_matrix(n, (i * 2) + 1) = data[i*totalSamplesPerEmitter + numSamples + n]; // Right channel
+        }
+    }
+
+    AmbisonicCodecImpl<> ambisonic_codec(ambisonic_order, sofa_angles);
+    auto decoder_matrix = ambisonic_codec.GetDecoderMatrix();
+    auto sh = hrir_full_matrix * decoder_matrix;
+
+    //printf("HRIR_full_matrix: %d x %d\n", (int)hrir_full_matrix.rows(), (int)hrir_full_matrix.cols());
+    //std::cout << hrir_full_matrix << std::endl;
+    //printf("decoder_matrix: %d x %d\n", (int)decoder_matrix.rows(), (int)decoder_matrix.cols());
+    //std::cout << decoder_matrix << std::endl;
+    //printf("WILL SH COEFFICIENTS: %d x %d = %d\n", (int)sh.rows(), (int)sh.cols(), (int)sh.size());
+    //std::cout << sh << std::endl;
+    //printf("--END\n");
+
+    // TODO(will): (opt?) perform ambisonic shelf-filtering
+
+    auto sh_hrirs = vraudio::CreateShHrirsFromMatrix(
+        sh, source_sampling_rate, graph_manager_->system_settings_.GetSampleRateHz(), &graph_manager_->resampler_);
+    graph_manager_->ambisonic_binaural_decoder_node_[ambisonic_order]->user_decoder = new AmbisonicBinauralDecoder(
+        *sh_hrirs, graph_manager_->system_settings_.GetFramesPerBuffer(), &graph_manager_->fft_manager_);
+
+    // close sofa file
+    mysofa_close(hrtf);
+
+    return true;
+};
+
+bool ResonanceAudioApiImpl::EnableCustomSofa(bool enable_sofa, int ambisonic_order) {
+    auto decoder_node = graph_manager_->ambisonic_binaural_decoder_node_[ambisonic_order];
+
+    if (enable_sofa && decoder_node->user_decoder == nullptr)
+        return false;
+
+    if (enable_sofa)
+        decoder_node->ambisonic_binaural_decoder_ = decoder_node->user_decoder;
+    else
+        decoder_node->ambisonic_binaural_decoder_ = decoder_node->builtin_decoder;
+
+    return true;
+};
+
 
 }  // namespace vraudio

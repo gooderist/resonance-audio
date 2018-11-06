@@ -416,10 +416,10 @@ class ResonanceAudioApi {
   // NOTE(will): temp functions to accept SH.wav data encoded with wav_to_hrtf.py
   virtual void SetHRIR(char* user_hrir) = 0;
   virtual void UseHRIR(bool use_hrir) = 0;
-  // TODO(will): Sets custom HRTF data stored in a sofa file
-  // virtual void bool SetCustomSofa(const char* file_name, int ambisonic_order) = 0;
-  // TODO(will): Enable custom HRTF
-  // virtual void bool EnableCustomSofa(bool use_hrir, int ambisonic_order) = 0;
+  // Sets custom HRTF data stored in a sofa file
+  virtual bool SetCustomSofa(const char* file_name, int ambisonic_order) = 0;
+  // Enable custom HRTF
+  virtual bool EnableCustomSofa(bool use_hrir, int ambisonic_order) = 0;
 
 };
 

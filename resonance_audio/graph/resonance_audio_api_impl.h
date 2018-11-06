@@ -116,9 +116,9 @@ class ResonanceAudioApiImpl : public ResonanceAudioApi {
   bool bUseHRIR = false;
   void SetHRIR(char* user_hrir) override;
   void UseHRIR(bool use_hrir) override;
-  // TODO(will): mysofalib integration for custom HRTF support
-  //bool SetCustomSofa(const char* file_name, int ambisonic_order) override;
-  //bool EnableCustomSofa(bool enable_sofa, int ambisonic_order) override;
+  // NOTE(will): mysofalib integration for custom HRTF support
+  bool SetCustomSofa(const char* file_name, int ambisonic_order) override;
+  bool EnableCustomSofa(bool enable_sofa, int ambisonic_order) override;
 
   //////////////////////////////////
   // Internal API methods.
